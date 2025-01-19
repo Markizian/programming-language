@@ -1,0 +1,39 @@
+
+
+@type func - return type of data in STRING
+@print - print data
+
+
+@a = type type 1
+@print a
+
+@type "zxc"
+
+@a = type 1
+@print a
+
+
+rāķsti "What is 2+2*5?"
+answer = 2 + 2 * 5
+
+nl
+rāķsti answer
+rāķsti type answer
+rāķsti type type answer
+nl
+
+rāķsti 2 * 2 + 4
+rāķsti type 1 + true
+
+nl
+
+zimēt 3
+
+a = 1
+if a == 2 rāķsti "A = 1"
+
+if a == 1 zimēt 3
+
+nl
+
+rāķsti zimēt 4
