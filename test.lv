@@ -1,0 +1,17 @@
+
+@raksti "Sveiki, pasaule!"
+
+atbilde = 2 + 2 * 5
+
+raksti atbilde
+raksti veids atbilde
+
+saddsadsa
+
+a = 2
+ja a ir 1 raksti "A = 1" vai raksti "a nav 1" vel zimēt 3
+
+jaunlīnija
+cikls 2 raksti "a" vel raksti "b"
+
+
