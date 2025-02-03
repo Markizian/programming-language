@@ -1,43 +1,59 @@
 #https://blog.miguelgrinberg.com/post/building-a-toy-programming-language-in-python
 
+#func
+#arg many
 
-#line_nr
+#a ++
+#<>
+#string + string
 
-#errors
+#errors array
+#errors test + stack
+#optimization
 
-class My:
+#array
+
+class lv:
     precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
 
     def __init__(self, code):
-        self.code = self.clean_up_code(code)
+        self.code = code
         self.token_feed = self.tokens()
+        self.token_memory = []
         self.returned_token = None
+        self.line_nr = 0
         self.stack = []
         self.stack_numbers = []
         self.vars = {}
 
-    def clean_up_code(self,code):
+    def process_string_in_code(self,code):
+
+        #print(code.split('\n'))#.encode('cp850', errors='replace').decode('cp850'))
+
+        #for line in code.strip().split('\n'):
+        #    for token in line.strip().split(' '):
+        #        print(token)
 
         #delete first empty lines
-        while code[0:1] == "\n":
-            code = code[1:]
+        #while code[0:1] == "\n":
+        #    code = code[1:]
 
         #delete rest empty lines
-        while code.find("\n\n") != -1:
-            code = str(code).replace('\n\n','\n')
+        #while code.find("\n\n") != -1:
+        #    code = str(code).replace('\n\n','\n')
 
         #delete comments
-        code_ready = ""
-        code_array = code.strip().split('\n')
-        for line in code_array:
-            if line[0] != "@":
-                code_ready += line+"\n"
-        code_ready = code_ready[:-1]
+        #code_ready = ""
+        #code_array = code.strip().split('\n')
+        #for line in code_array:
+        #    if line[0] != "@":
+        #        code_ready += line+"\n"
+        #code_ready = code_ready[:-1]
 
         #prepare string
-        code_ready_copy = ""
+        code_ready = ""
         str_detected = False
-        for char in code_ready:
+        for char in code:
             if char == '"':
                 if str_detected == True:
                     str_detected = False
@@ -45,46 +61,55 @@ class My:
                     str_detected = True
             
             if str_detected == False:
-                code_ready_copy += char
+                code_ready += char
             else:
                 if char == " ":
-                    code_ready_copy += "_"
+                    code_ready += "_"
                 else:
-                    code_ready_copy += char
+                    code_ready += char
 
-        #print(code_ready_copy)
+        #print(code_ready_copy.strip().split('\n'))
         
-        return code_ready_copy
+        return code_ready
 
-    def str_prep(self, str):
+    def process_string_in_token(self, str):
         str = str.replace("_"," ")
         str = str.replace('"',"")
         return str
 
     def raise_error(self, message):
-        raise ValueError(f'{message}')
+        raise ValueError(f'{message}, uz rindas {self.line_nr}')
 
     def tokens(self):
-        for line in self.code.strip().split('\n'):
-            for token in line.strip().split(' '):
-                if token in ['rāķsti', 'nl', 'if', '==', '=', '+', '-', '*', '/']:
+        self.code = self.process_string_in_code(self.code)
+
+        for line in self.code.split('\n'):
+            self.line_nr += 1
+            for token in line.split(' '):
+
+                if token == "":
+                    break
+                elif token[0] == "@":
+                    break
+
+                if token in ['raksti', 'jaunlīnija', 'cikls', 'ja', 'vai', 'vel', 'ir', '=', '+', '-', '*', '/']:
                     yield (token,)
                 elif token.isnumeric():
                     yield ('int', int(token))
                 elif token[0] == '"' and token[-1] == '"':
-                    yield ('string', self.str_prep(token))
-                elif token == "true":
+                    yield ('string', self.process_string_in_token(token))
+                elif token == "patiess":
                     yield ('bool', int(1))
-                elif token == "false":
+                elif token == "aplams":
                     yield ('bool', int(0))
-                elif token == "type":
+                elif token == "veids":
                     yield ('function', token)
                 elif token == "zimēt":
                     yield ('function', token)
-                elif token[0].isalpha() and token[0] != '"' and token[-1] != '"':
+                elif token.isalpha() and token[0] != '"' and token[-1] != '"':
                     yield ('variable', token)
                 else:
-                    self.raise_error(f'Invalid token {token}')
+                    self.raise_error(f'Nepareizs tokens {token}')
             yield ('\n',)
 
     def next_token(self):
@@ -92,6 +117,10 @@ class My:
             token = self.returned_token
             self.returned_token = None
         else:
+            if len(self.token_memory) > 0:
+                    token = self.token_memory[0]
+                    self.token_memory.pop(0)
+                    return token
             try:
                 token = next(self.token_feed)
             except StopIteration:
@@ -123,33 +152,43 @@ class My:
     def stack_collapse(self):
 
         func_stack = []
-        string_stack = []
+        other_stack = []
+        is_operated = False
 
         for token in self.stack:
-            if token[0] == "rāķsti":
-                print_output = True
-            elif token[0] == "string":
-                string_stack.append(token)
+            if token[0] == "string":
+                other_stack.append(token)
             elif token[0] == "function":
                 func_stack.append(token)
             elif token[0] == "int":
                 self.stack_numbers.append(token[1])
             elif token[0] == "bool":
                 self.stack_numbers.append(token[1])
+                other_stack.append(token)
             elif token[0] in ['+', '-', '*', '/']:
+                is_operated = True
                 self.stack_numbers.append(self.stack_calculate(next_operator=token[0]))
                 self.stack_numbers.append((token[0], self.precedence[token[0]]))
 
         if len(self.stack_numbers) > 0:
             self.stack_push(("int",self.stack_calculate()))
 
+        #bool bug kostil
+        if len(other_stack) == 1 and other_stack[0][0] == "bool" and not is_operated:
+            con = self.stack.pop()
+            con = list(con)
+            con[0] = "bool"
+            con = tuple(con)
+            self.stack_push(con)
+        
+
         #function stack
         while len(func_stack) > 0:
             match func_stack.pop()[1]:
-                case "type":
+                case "veids":
                     v1 = self.stack.pop()
                     if v1[0] == "function":
-                        self.raise_error('Expected argument')
+                        self.raise_error('Paredzams funkcijas arguments')
 
                     v2 = self.stack.pop()
 
@@ -157,12 +196,12 @@ class My:
                 case "zimēt":
                     v1 = self.stack.pop()
                     if v1[0] == "function":
-                        self.raise_error('Expected argument')
+                        self.raise_error('Paredzams funkcijas arguments')
 
                     v2 = self.stack.pop()
 
                     if v1[0] != "int":
-                        self.raise_error('Expected: invalid argument')
+                        self.raise_error('Nepareizs funkcijas arguments')
 
                     self.stack_push(("string", "<>"*v1[1]))
 
@@ -172,29 +211,69 @@ class My:
         return output
 
     def parse_program(self):
-        if not self.parse_statement():
-            self.raise_error('Expected: statement')
         token = self.next_token()
         while token is not None:
             self.return_token(token)
+
             if not self.parse_statement():
-               self.raise_error('Expected: statement')
+               self.raise_error('Paredzams apgalvojums')
             token = self.next_token()
         return True
     
     def parse_statement(self):
-        if not self.parse_print_statement() and not self.parse_function_statement() and not self.parse_assignment() and not self.parse_newline_statement() and not self.parse_if_statement():
-            self.raise_error('Expected: statement, assignment or function')
+        token = self.next_token()
+        if token[0] == '\n':
+            return True
+        else:
+            self.return_token(token)
+
+        if not self.parse_print_statement() and not self.parse_function_statement() and not self.parse_assignment() and not self.parse_newline_statement() and not self.parse_if_statement() and not self.parse_for_loop_statement():
+            self.raise_error('Paredzams apgalvojums, mainigo pieskirsana, funkcija vai cikls')
         token = self.next_token()
 
         if token is not None:
             while token[0] != '\n':
                 token = self.next_token()
         return True
-    
+
+    def parse_for_loop_statement(self):
+        token = self.next_token()
+        if token[0] != 'cikls':
+            self.return_token(token)
+            return False
+
+        token = self.next_token()
+        counter = 0
+
+        if token[0] == 'variable':
+            if token[1] not in self.vars:
+                self.raise_error(f'Sintakses kluda: Nezinams mainigais {token[1]}')
+            else:
+                counter = self.vars[token[1]]
+        elif token[0] == "int": 
+            counter = token[1]
+        else:
+            self.raise_error(f'Sintakses kluda: Paredzams mainigais')
+
+        token_memory = [('\n',)]
+        token = self.next_token()
+        while token[0] != '\n':
+            if token[0] == 'vel':
+                token_memory.append(('\n',))
+            else:
+                token_memory.append(token)
+            token = self.next_token()
+
+        token_memory = token_memory*counter
+        token_memory.append(('\n',))
+
+        self.token_memory = token_memory
+
+        return True
+
     def parse_if_statement(self):
         token = self.next_token()
-        if token[0] != 'if':
+        if token[0] != 'ja':
             self.return_token(token)
             return False
         
@@ -203,28 +282,50 @@ class My:
 
         if token[0] == 'variable':
             if token[1] not in self.vars:
-                self.raise_error(f'Syntax Error: Unknown variable {token[1]}')
+                self.raise_error(f'Sintakses kluda: Nezinams mainigais {token[1]}')
             else:
                 identifier = self.vars[token[1]]
         else: 
-            self.raise_error(f'Syntax Error: Expected variable')
+            self.raise_error(f'Sintakses kluda: Paredzams mainigais')
 
         token = self.next_token()
-        if token[0] != '==':
-            self.raise_error('Expected ==')
+        if token[0] != 'ir':
+            self.raise_error('Paredzams: ir')
 
         comparison = self.next_token()
 
+        token_memory_if = [('\n',)]
+        token_memory_else = [('\n',)]
+        token = self.next_token()
+
+        while token[0] != '\n' and token[0] != 'vai':
+            if token[0] == 'vel':
+                token_memory_if.append(('\n',))
+            else:
+                token_memory_if.append(token)
+            token = self.next_token()
+        token_memory_if.append(('\n',))
+        
+        if token[0] == 'vai':
+            token = self.next_token()
+            while token[0] != '\n':
+                if token[0] == 'vel':
+                    token_memory_else.append(('\n',))
+                else:
+                    token_memory_else.append(token)
+                token = self.next_token()
+            token_memory_else.append(('\n',))
+
         if comparison == identifier:
-            if not self.parse_statement():
-                self.raise_error('Expected: after if statement')
-            self.return_token(("\n",))
+            self.token_memory = token_memory_if
+        else:
+            self.token_memory = token_memory_else
 
         return True
 
     def parse_newline_statement(self):
         token = self.next_token()
-        if token[0] != 'nl':
+        if token[0] != 'jaunlīnija':
             self.return_token(token)
             return False
         print("")
@@ -232,11 +333,11 @@ class My:
 
     def parse_print_statement(self):
         token = self.next_token()
-        if token[0] != 'rāķsti':
+        if token[0] != 'raksti':
             self.return_token(token)
             return False
         if not self.parse_expression():
-            self.raise_error('Expected: expression')
+            self.raise_error('Paredzama izteiksme')
 
         value = self.stack_collapse()[1]
 
@@ -250,26 +351,26 @@ class My:
             return False
  
         match token[1]:
-            case "type":
+            case "veids":
                 token = self.next_token()
                 if token[0] != '\n':
-                    self.raise_error('Expected argument')
+                    self.raise_error('Paredzams arguments')
                 else:
                     self.return_token(token)
 
             case "zimēt":
                 token = self.next_token()
                 if token[0] != 'int':
-                    self.raise_error('Expected argument')
+                    self.raise_error('Paredzams arguments')
                 else:
                     self.return_token(token)
 
                 if not self.parse_expression():
-                    self.raise_error('Expected: expression')
+                    self.raise_error('Paredzama izteiksme')
 
                 value = self.stack_collapse()
                 if value[0] != "int":
-                    self.raise_error('Expected: invalid argument')
+                    self.raise_error('Nepareizs funkcijas arguments')
                 print("<>"*value[1])  
 
         return True
@@ -298,7 +399,7 @@ class My:
 
         if token[0] == 'variable':
             if token[1] not in self.vars:
-                self.raise_error(f'Syntax Error: Unknown variable {token[1]}')
+                self.raise_error(f'Sintakses kluda: Nezinams mainigais {token[1]}')
             else:
                 self.stack_push(self.vars[token[1]])
         else:
@@ -323,9 +424,9 @@ class My:
         identifier = token[1]
         token = self.next_token()
         if token[0] != '=':
-            self.raise_error('Expected =')
+            self.raise_error('Paredzams =')
         if not self.parse_expression():
-            self.raise_error('Expected expression')
+            self.raise_error('Paredzama izteiksme')
         
         self.vars[identifier] = self.stack_collapse()
         self.stack = []
@@ -346,6 +447,6 @@ class My:
 
 
 if __name__ == '__main__':
-    f = open("test.my", "r", encoding="utf-8")
-    program = My(f.read())
+    f = open("tests.lv", "r", encoding="utf-8")
+    program = lv(f.read())
     program.run()
