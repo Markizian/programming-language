@@ -1,17 +1,16 @@
 #https://blog.miguelgrinberg.com/post/building-a-toy-programming-language-in-python
 
-#func
 #arg many
 
-#a ++
-#<>
-#string + string
-
 #errors array
-#errors test + stack
+#errors test
 #optimization
+#pilniga lokalizacija
+#stack reorganization
 
 #array
+
+#comments in code
 
 class lv:
     precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
@@ -92,7 +91,7 @@ class lv:
                 elif token[0] == "@":
                     break
 
-                if token in ['raksti', 'jaunlīnija', 'cikls', 'ja', 'vai', 'vel', 'ir', '=', '+', '-', '*', '/']:
+                if token in ['raksti', 'jaunlīnija', 'cikls', 'ja', 'vai', 'vel', 'ir', '>', '<', '++', '--', '=', '+', '-', '*', '/']:
                     yield (token,)
                 elif token.isnumeric():
                     yield ('int', int(token))
@@ -104,7 +103,7 @@ class lv:
                     yield ('bool', int(0))
                 elif token == "veids":
                     yield ('function', token)
-                elif token == "zimēt":
+                elif token == "zimet":
                     yield ('function', token)
                 elif token.isalpha() and token[0] != '"' and token[-1] != '"':
                     yield ('variable', token)
@@ -151,13 +150,16 @@ class lv:
 
     def stack_collapse(self):
 
+        #print(self.stack)
+
         func_stack = []
+        string_stack = []
         other_stack = []
-        is_operated = False
+        is_operated = []
 
         for token in self.stack:
             if token[0] == "string":
-                other_stack.append(token)
+                string_stack.append(token)
             elif token[0] == "function":
                 func_stack.append(token)
             elif token[0] == "int":
@@ -166,21 +168,31 @@ class lv:
                 self.stack_numbers.append(token[1])
                 other_stack.append(token)
             elif token[0] in ['+', '-', '*', '/']:
-                is_operated = True
-                self.stack_numbers.append(self.stack_calculate(next_operator=token[0]))
-                self.stack_numbers.append((token[0], self.precedence[token[0]]))
+                is_operated.append(token[0])
+                if len(string_stack) == 0:
+                    self.stack_numbers.append(self.stack_calculate(next_operator=token[0]))
+                    self.stack_numbers.append((token[0], self.precedence[token[0]]))
 
+        #print(string_stack)
+
+        #number stack
         if len(self.stack_numbers) > 0:
             self.stack_push(("int",self.stack_calculate()))
 
+        #string stack
+        string_res = ""
+        if len(string_stack) > 0 and '+' in is_operated:
+            while len(string_stack) > 0:
+                string_res += string_stack.pop(0)[1]
+            self.stack_push(("string",string_res))
+
         #bool bug kostil
-        if len(other_stack) == 1 and other_stack[0][0] == "bool" and not is_operated:
+        if len(other_stack) == 1 and other_stack[0][0] == "bool" and len(is_operated) == 0:
             con = self.stack.pop()
             con = list(con)
             con[0] = "bool"
             con = tuple(con)
             self.stack_push(con)
-        
 
         #function stack
         while len(func_stack) > 0:
@@ -193,7 +205,7 @@ class lv:
                     v2 = self.stack.pop()
 
                     self.stack_push(("string", v1[0]))
-                case "zimēt":
+                case "zimet":
                     v1 = self.stack.pop()
                     if v1[0] == "function":
                         self.raise_error('Paredzams funkcijas arguments')
@@ -289,10 +301,15 @@ class lv:
             self.raise_error(f'Sintakses kluda: Paredzams mainigais')
 
         token = self.next_token()
-        if token[0] != 'ir':
-            self.raise_error('Paredzams: ir')
+        if token[0] != 'ir' and token[0] != '>' and token[0] != '<':
+            self.raise_error('Paredzams: ir, >, <')
+        if token[0] == '>' and identifier[0] != 'int' or token[0] == '<' and identifier[0] != 'int':
+            self.raise_error('Paredzams skaitliskais mainigais')
 
+        instruction = token[0]
         comparison = self.next_token()
+        if comparison[0] != 'int':
+            self.raise_error('Paredzama skaitliska vertiba')
 
         token_memory_if = [('\n',)]
         token_memory_else = [('\n',)]
@@ -316,10 +333,22 @@ class lv:
                 token = self.next_token()
             token_memory_else.append(('\n',))
 
-        if comparison == identifier:
-            self.token_memory = token_memory_if
-        else:
-            self.token_memory = token_memory_else
+        match instruction:
+            case 'ir':
+                if identifier == comparison:
+                    self.token_memory = token_memory_if
+                else:
+                    self.token_memory = token_memory_else
+            case '>':
+                if identifier > comparison:
+                    self.token_memory = token_memory_if
+                else:
+                    self.token_memory = token_memory_else
+            case '<':
+                if identifier < comparison:
+                    self.token_memory = token_memory_if
+                else:
+                    self.token_memory = token_memory_else
 
         return True
 
@@ -349,14 +378,24 @@ class lv:
         if token[0] != 'function':
             self.return_token(token)
             return False
+        self.stack_push(token)
+        
+        if not self.parse_expression():
+            self.raise_error('Paredzama izteiksme')
+
+        value = self.stack_collapse()[1]
+        print(value)
  
-        match token[1]:
+        """match token[1]:
             case "veids":
                 token = self.next_token()
-                if token[0] != '\n':
+                if token[0] == "":
                     self.raise_error('Paredzams arguments')
                 else:
                     self.return_token(token)
+                
+                token = self.next_token()
+                print(token[0])  
 
             case "zimēt":
                 token = self.next_token()
@@ -372,6 +411,7 @@ class lv:
                 if value[0] != "int":
                     self.raise_error('Nepareizs funkcijas arguments')
                 print("<>"*value[1])  
+            """
 
         return True
 
@@ -422,14 +462,25 @@ class lv:
             self.return_token(token)
             return False
         identifier = token[1]
+    
         token = self.next_token()
-        if token[0] != '=':
-            self.raise_error('Paredzams =')
-        if not self.parse_expression():
-            self.raise_error('Paredzama izteiksme')
+        if token[0] != '=' and token[0] != '++' and token[0] != '--':
+            self.raise_error('Paredzams =, ++, -- pec mainigaja '+identifier)
+
+        if token[0] == '=':
+            if not self.parse_expression():
+                self.raise_error('Paredzama izteiksme')
+            self.vars[identifier] = self.stack_collapse()
+            self.stack = []
+        elif token[0] == '++':
+            if self.vars[identifier][0] != 'int':
+                self.raise_error('Paredzams skaitliskais mainigais')
+            self.vars[identifier] = ('int',self.vars[identifier][1]+1)
+        elif token[0] == '--': 
+            if self.vars[identifier][0] != 'int':
+                self.raise_error('Paredzams skaitliskais mainigais')
+            self.vars[identifier] = ('int',self.vars[identifier][1]-1)
         
-        self.vars[identifier] = self.stack_collapse()
-        self.stack = []
         return True 
 
     def run(self):
