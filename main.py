@@ -1,19 +1,20 @@
 #https://blog.miguelgrinberg.com/post/building-a-toy-programming-language-in-python
 
-#arg many
-
 #errors array
 #errors test
 #optimization
 #pilniga lokalizacija
-#stack reorganization
+#comments in code
 
+#projekta darbs
+
+#pludini
 #array
 
-#comments in code
 
 class lv:
     precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
+    function_arg_count = {'veids': 1, 'zimet': 2}
 
     def __init__(self, code):
         self.code = code
@@ -152,12 +153,89 @@ class lv:
 
         #print(self.stack)
 
-        func_stack = []
-        string_stack = []
-        other_stack = []
-        is_operated = []
+        last_token = []
+        args = []
+        args_temp = []
+        arg_count = 0
 
+        self.stack_numbers = []
+        
+        ### sadalit pa args
         for token in self.stack:
+            if (len(args) == 0) and token[0] == "function":
+                args_temp.append(token)
+                args.append(args_temp)
+                args_temp = []
+            else:
+                if token[0] in ['function']:
+                    if len(args_temp) != 0:
+                        args.append(args_temp)
+                        args_temp = []
+
+                    arg_count = self.function_arg_count[token[1]]
+                    args_temp.append(token)
+
+                if arg_count > 0 and token[0] not in ['function']:
+                    args_temp.append(token)
+                    arg_count -= 1
+
+                    if arg_count == 0:
+                        args.append(args_temp)
+                        args_temp = []
+                
+                elif arg_count == 0:
+                    if token[0] in ['string', 'int', 'bool'] and len(last_token) != 0 and last_token[0] in ['string', 'int', 'bool'] and len(args_temp) != 0:
+                        args.append(args_temp)
+                        args_temp = []
+
+                    args_temp.append(token)
+
+            last_token = token
+
+        if len(args_temp) != 0:
+            args.append(args_temp)
+            
+        ###
+
+        #print(args)
+
+        ### args proccesing
+
+        args_temp = []
+        for arg in args:
+            if len(arg) > 1 and ('+',) in arg and 'string' not in arg[0][0]:
+                for token in arg:
+                    if token[0] == "int" or token[0] == "bool":
+                        self.stack_numbers.append(token[1])
+                    if token[0] in ['+', '-', '*', '/']:
+                        self.stack_numbers.append(self.stack_calculate(next_operator=token[0]))
+                        self.stack_numbers.append((token[0], self.precedence[token[0]]))
+                args_temp.append([("int",self.stack_calculate())])
+            
+            elif len(arg) > 1 and ('+',) in arg and 'string' in arg[0][0]:
+                string = ""
+                for token in arg:
+                    if token[0] == "string":
+                        string += token[1]
+                args_temp.append([("string",string)])
+
+            elif len(arg) > 1 and arg[0][0] == "function":
+                args_temp.append([self.function_option(arg[0][1], [arg[1::]])])
+
+            else:
+                args_temp.append(arg)
+
+        args = args_temp
+        ###
+
+        #print(args_temp)
+
+
+
+        '''for token in self.stack:
+            if token[0] in ['+', '-', '*', '/'] and self.stack[-1] == token:
+                self.raise_error(f'Pec operatora jabut statement')
+
             if token[0] == "string":
                 string_stack.append(token)
             elif token[0] == "function":
@@ -169,58 +247,43 @@ class lv:
                 other_stack.append(token)
             elif token[0] in ['+', '-', '*', '/']:
                 is_operated.append(token[0])
-                if len(string_stack) == 0:
-                    self.stack_numbers.append(self.stack_calculate(next_operator=token[0]))
-                    self.stack_numbers.append((token[0], self.precedence[token[0]]))
+                #if len(string_stack) == 0:
+                    #self.stack_numbers.append(self.stack_calculate(next_operator=token[0]))
+                    #self.stack_numbers.append((token[0], self.precedence[token[0]]))
+        '''
 
-        #print(string_stack)
+        #first function stack
+        if args[0][0][0] == "function":
+            self.stack_push(self.function_option(args[0][0][1], args[1::]))
+            output = self.stack.pop()
+        else:
+            output = args.pop()[0]
 
-        #number stack
-        if len(self.stack_numbers) > 0:
-            self.stack_push(("int",self.stack_calculate()))
-
-        #string stack
-        string_res = ""
-        if len(string_stack) > 0 and '+' in is_operated:
-            while len(string_stack) > 0:
-                string_res += string_stack.pop(0)[1]
-            self.stack_push(("string",string_res))
-
-        #bool bug kostil
-        if len(other_stack) == 1 and other_stack[0][0] == "bool" and len(is_operated) == 0:
-            con = self.stack.pop()
-            con = list(con)
-            con[0] = "bool"
-            con = tuple(con)
-            self.stack_push(con)
-
-        #function stack
-        while len(func_stack) > 0:
-            match func_stack.pop()[1]:
-                case "veids":
-                    v1 = self.stack.pop()
-                    if v1[0] == "function":
-                        self.raise_error('Paredzams funkcijas arguments')
-
-                    v2 = self.stack.pop()
-
-                    self.stack_push(("string", v1[0]))
-                case "zimet":
-                    v1 = self.stack.pop()
-                    if v1[0] == "function":
-                        self.raise_error('Paredzams funkcijas arguments')
-
-                    v2 = self.stack.pop()
-
-                    if v1[0] != "int":
-                        self.raise_error('Nepareizs funkcijas arguments')
-
-                    self.stack_push(("string", "<>"*v1[1]))
-
-        output = self.stack.pop()
         self.stack = []
 
         return output
+
+    def function_option(self, function_name, args):
+        match function_name:
+            case "veids":
+                arg = args[0][0]
+                if arg[0] == "function":
+                    self.raise_error('Paredzams funkcijas arguments')
+
+                return ("string", arg[0])
+
+            case "zimet":
+                arg = args[0][0]
+                #print(arg)
+                count = args[1][0]
+                if arg[0] == "function":
+                    self.raise_error('Paredzams funkcijas arguments')
+                if count[0] != "int":
+                    self.raise_error('Nepareizs funkcijas arguments')
+
+                return ("string", str(arg[1])*count[1]) 
+        
+        self.raise_error('Nav tadas funkcijas')
 
     def parse_program(self):
         token = self.next_token()
@@ -385,7 +448,7 @@ class lv:
 
         value = self.stack_collapse()[1]
         print(value)
- 
+
         """match token[1]:
             case "veids":
                 token = self.next_token()
