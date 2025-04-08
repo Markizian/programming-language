@@ -5,11 +5,11 @@
 
 #projekta darbs
 
-#sait
-
 class lv:
     precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
     function_arg_count = {'veids': 1, 'zīmēt': 2, 'mainīt': 2}
+    output = ""
+    error = ""
 
     def __init__(self, code):
         self.code = code
@@ -95,6 +95,7 @@ class lv:
         with open("Kļūdu ziņojums.txt", "w", encoding="utf-8") as file:
             file.write(message)
 
+        self.error = message
         message = str(message.encode('utf-8'))
         message = message[2:-1]
         raise ValueError(f'{message}')
@@ -467,6 +468,7 @@ class lv:
             self.return_token(token)
             return False
         print("")
+        self.output += "\n"
         return True
 
     def parse_print_statement(self):
@@ -476,8 +478,10 @@ class lv:
             return False
         if not self.parse_expression():
             self.raise_error(f'{self.errors_list("Paredzama izt")}, uz rindas {self.line_nr}')
-            
-        print(self.utf8_string(self.stack_collapse()[1]))
+
+        value = self.stack_collapse()[1]
+        print(self.utf8_string(value))
+        self.output += str(value) + "\n"
         return True
     
     def parse_function_statement(self):
@@ -489,8 +493,10 @@ class lv:
         
         if not self.parse_expression():
             self.raise_error(f'{self.errors_list("Paredzama izt")}, uz rindas {self.line_nr}')
-            
-        print(self.utf8_string(self.stack_collapse()[1]))
+        
+        value = self.stack_collapse()[1]
+        print(self.utf8_string(value))
+        self.output += str(value) + "\n"
         return True
 
     def parse_expression(self):
@@ -574,6 +580,12 @@ class lv:
 
     def stack_pop(self):
         return self.stack.pop()
+
+    def get_output(self):
+        return self.output
+
+    def get_error(self):
+        return self.error
 
 if __name__ == '__main__':
     f = open("tests.lv", "r", encoding="utf-8")
