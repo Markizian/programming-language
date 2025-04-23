@@ -1,0 +1,55 @@
+x = 5
+y = mainīt x plūdiņi
+
+raksti y 5.0
+
+x = 5
+y = mainīt x rindas
+
+raksti y "5"
+
+raksti y + "2" "25"
+
+ja a ir 1 raksti "a ir 1"
+jaunlīnija
+
+raksti 1 + 2 + patiess
+mainīgais = "č"
+
+raksti veids mainīgais
+zīmē 3
+
+@vēl
+
+cikls 3 raksti "a" vēl raksti "b" vēl raksti "c"
+
+ja a ir 1 raksti "a ir 1" vēl zīmē 2 vai raksti "a nav 1"
+
+
+
+@Pirmā latviešu programmēšanas valoda!
+
+@raksti "Sveiki, pasaule!"
+
+atbilde = 2 + 2 * 5
+
+jaunlīnija
+raksti atbilde
+raksti veids atbilde
+raksti veids veids atbilde
+jaunlīnija
+
+a = 1
+ja a ir 2 raksti "A = 2"
+
+ja a ir 1 zimēt 3
+ja a ir 1 raksti "A = 1"
+
+jaunlīnija
+raksti zimēt 2
+jaunlīnija
+
+cikls 7 zimēt 5
+
+jaunlīnija
+raksti "sad"

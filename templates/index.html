@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <title>LPV izpildītājs</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        textarea { width: 100%; height: 200px; font-family: monospace; font-size: 14px; }
+        pre { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
+        div { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Latviešu Programmēšanas Valodas izpildītājs</h1>
+    <form method="post">
+        <textarea name="code" placeholder="LPV kods...">{{ code }}</textarea><br>
+        <button type="submit">Sākt</button>
+    </form>
+
+    <h2>Rezultāts:</h2>
+    <pre>{{ output }}</pre>
+    <h2>Kļūdas:</h2>
+    <pre>{{ errors }}</pre>
+
+    <br><hr>
+    <h3>Apraksts:</h3>
+    <div><code>
+@Pirmā latviešu programmēšanas valoda!
+
+@4 mainīgo tipi
+@veselnieki 1 2 3
+@pludiņi 1.2
+@rinda "govs"
+@buls patiess (1) aplams (0)
+
+
+@3 funkcijas
+
+@veids arg1 - parādā maīnigo tipu
+@arg1 - jebkāds mainīgais
+
+@zīmēt arg1 arg2 - zīmē tekstu, noteiktas reizes
+@arg1 - jebkāds mainīgais
+@arg2 - reizes, veselnieks
+
+@mainīt arg1 arg2 - maina maīnigo tipu
+@arg1 - jebkāds mainīgais
+@arg2 - uz kādu mainīgo pārvērst
+
+
+@raksti - izvade terminālā
+@cikls veselnieks - cikla izpilde
+@ja mainīgais (ir, <, >) mainīgais ... vēl ... vai ... vēl ... - salīdzināt un izpildīt
+@vēl - lai pievienotu vēl vienu darbību
+@a ++ - palielina par vienu
+@a -- - samazina par vienu
+@jaunlīnija - pārslēgties uz jaunu rindu
+@Matematiskas darbības + - * /
+
+
+@Piemēri:
+
+x = 5 - 1
+x ++
+
+y = mainīt x "pludiņi"
+
+raksti y
+
+y = mainīt y "rinda"
+raksti y + "2"
+
+a = 1
+
+ja a ir 1 raksti "a ir 1"
+jaunlīnija
+
+raksti 1 + 2 + patiess
+mainīgais = "burts"
+
+zīmēt veids mainīgais 3
+
+cikls 3 raksti "a" vēl raksti "b" vēl raksti "c"
+
+ja a ir 2 raksti "a ir 1" vēl zīmēt "govs" 2 vai raksti "a nav 1"
+    </code><div>
+</body>
+</html>

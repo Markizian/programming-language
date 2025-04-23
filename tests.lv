@@ -1,0 +1,37 @@
+
+cikls 3 raksti 1 vēl raksti 2
+
+a = 2
+a ++
+cikls a raksti "asd"
+
+
+@Pirmā latviešu programmēšanas valoda!
+
+x = 5
+y = mainīt x "pludiņi"
+
+raksti y
+
+y = mainīt y "rinda"
+raksti y + "2"
+
+a = 1
+
+ja a ir 1 raksti "a ir 1"
+jaunlīnija
+
+raksti 1 + 2 + patiess
+mainīgais = "burts"
+
+zīmēt veids mainīgais 3
+
+
+cikls 3 raksti "a" vēl raksti "b" vēl raksti "c"
+
+ja a ir 2 raksti "a ir 1" vēl zīmēt "govs" 2 vai raksti "a nav 1"
+
+a = 1
+b = 1
+
+ja a ir 3 raksti "asd" vai raksti "qwe"
